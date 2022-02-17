@@ -103,8 +103,40 @@ describe("Dream Tests", ()=>{
       const stratBal = await ethers.provider.getBalance(strategy.address);
       assert(stratBal.gt(0));
     });
+
+    describe("swaps", async()=>{
+      it("fails to issue a swap with no collateral", async()=>{
+        try{
+          await strategy.connect(user1).buySwap(ethers.utils.parseEther("0.1"));
+        }catch(e){
+          assert(e)
+        }
+      });
+
+      it("owner transfers user1 some tokens", async()=>{
+        await stable.transfer(user1.address, ethers.utils.parseEther("1"));
+        const newBal = await stable.balanceOf(user1.address);
+        assert.equal(ethers.utils.parseEther("1").toString(), newBal.toString());
+      });
+
+      it("user1 submits collateral", async()=>{
+        await stable.connect(user1).approve(treasury.address, ethers.utils.parseEther("0.005"));
+        await treasury.connect(user1).addCollateral(ethers.utils.parseEther("0.005"));
+        const availableCollateral = await treasury.availableCollateral(user1.address);
+        assert.equal(availableCollateral.toString(), ethers.utils.parseEther("0.005").toString());
+      });
+
+      it("user1 buysSwap successfuly", async()=>{
+        await strategy.connect(user1).buySwap(ethers.utils.parseEther("0.05"));
+        const NFTOwner = await swaps.ownerOf(1);
+        assert.equal(NFTOwner, user1.address);
+      });
+
+    });
+  
   
   });
+
 
 });
 

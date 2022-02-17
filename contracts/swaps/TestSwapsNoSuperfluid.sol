@@ -93,6 +93,6 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
     }
 
     function _getRequiredCollateral(uint _amountUnderlying) internal pure returns(uint){
-        return((_amountUnderlying * 10) / 100);
+        return((_amountUnderlying) / 10);
     }
 }

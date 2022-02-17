@@ -98,13 +98,13 @@ contract Treasury is Ownable, ISwapReceiver {
 
     function _removeCollateralForUser(address _user, uint256 _toChange) private{
         totalOwedCollateral = 
-        _toChange > totalOwedCollateral ?
+        _toChange >= totalOwedCollateral ?
             0:
             totalOwedCollateral - _toChange;
 
 
         availableCollateral[_user] = 
-        _toChange > availableCollateral[_user] ?
+        _toChange >= availableCollateral[_user] ?
             0:
             availableCollateral[_user] - _toChange;
     }

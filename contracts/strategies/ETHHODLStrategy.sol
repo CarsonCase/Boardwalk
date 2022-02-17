@@ -58,7 +58,7 @@ contract ETHHODLStrategy is StrategyStandard{
     }
 
     function getPriceUnderlyingUSD(uint _underlyingAm) public view override returns(int){
-        (int price, uint8 decimals) = oracle.getPriceOf(eth);
+        (int price, uint8 decimals) = oracle.priceOf(eth);
         return((int(_underlyingAm) * price) / int(10**decimals));
     }
 

@@ -9,7 +9,7 @@ interface ITreasury{
 }
 
 interface IOracle{
-    function getPriceOf(address) external view returns(int,uint8);
+    function priceOf(address) external view returns(int,uint8);
 }
 
 /**
@@ -31,7 +31,7 @@ abstract contract StrategyStandard is Ownable{
     }
 
     function getPriceUnderlyingUSD(uint _underlyingAm) external virtual returns(int){
-        (int price, uint8 decimals) = oracle.getPriceOf(stablecoin);
+        (int price, uint8 decimals) = oracle.priceOf(stablecoin);
         return((int(_underlyingAm) * price) / int(10**decimals));
     }
 
