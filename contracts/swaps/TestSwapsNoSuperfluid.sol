@@ -18,6 +18,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
     struct asset{
         int96 flowRateForAssets;
         uint amountUnderlyingExposed;
+        uint lockedCollateral;
         int priceUSD;
         address oracle;
     }
@@ -38,6 +39,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         require(ISwapReceiver(_receiver).verifyNewSwap(msg.sender,_amountUnderlying), "This receiver did not permit you to issue this swap");
         bytes32 fid = _generateFlowId(_payer, address(this));
         flowIDToReceiverNFT[fid] = index;
+        ISwapReceiver(_receiver).lockCollateral(_payer, _getRequiredCollateral(_amountUnderlying));
 
         // mint NFTs
         _mintReceiver(_receiver,_amountUnderlying, 0, msg.sender);    // note receiver will always have an even ID 0,2,4,ect.
@@ -60,7 +62,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, ownerOf(receiverIndex+1));
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1));
 
         _burn(receiverIndex);
         _burn(receiverIndex+1);
@@ -70,7 +72,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
     function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _oracle) internal{
         _mint(_receiver,index); 
         int usdVal = IStrategy(_oracle).getPriceUnderlyingUSD(_amountUnderlying);
-        asset memory a =asset(_flowRate, _amountUnderlying, usdVal, _oracle);
+        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying), usdVal, _oracle);
         _updateReceiverAssetsOwed(index,a);         
         index++;
  
@@ -88,5 +90,9 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
 
     function _generateFlowId(address sender, address receiver) public pure returns(bytes32 id) {
         return keccak256(abi.encode(sender, receiver));
+    }
+
+    function _getRequiredCollateral(uint _amountUnderlying) internal pure returns(uint){
+        return((_amountUnderlying * 10) / 100);
     }
 }

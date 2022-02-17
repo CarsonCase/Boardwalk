@@ -122,7 +122,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, ownerOf(receiverIndex+1));
+        ISwapReceiver(receiver).settle(settlement, 0, ownerOf(receiverIndex+1));
 
         emit CaughtTermination(_agreementId, flowCancelled);
         _burn(receiverIndex);
@@ -149,7 +149,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, ownerOf(receiverIndex+1));
+        ISwapReceiver(receiver).settle(settlement, 0, ownerOf(receiverIndex+1));
 
         _burn(receiverIndex);
         _burn(receiverIndex+1);

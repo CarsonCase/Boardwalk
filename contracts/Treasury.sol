@@ -64,8 +64,10 @@ contract Treasury is Ownable, ISwapReceiver {
         return(strategiesApprovedBalances[_swapCreator] >= _amountUnderlying);
     }
 
-    function settle(int _usdSettlement, address _recipient) override external{
+    function settle(int _usdSettlement, uint _collateralToFree, address _recipient) override external{
         require(strategiesApprovedBalances[msg.sender] >= 0,"Only a valid strategy can call this");
+        _addCollateralForUser(_recipient, _collateralToFree);
+
         /// todo request funds from strategy to settle with instead of internal balances
         if(_usdSettlement == 0){return;}
         if(_usdSettlement > 0){
@@ -74,6 +76,15 @@ contract Treasury is Ownable, ISwapReceiver {
             _removeCollateralForUser(_recipient, uint256(_usdSettlement * -1));
         }
         emit NewSettlement(_usdSettlement);
+    }
+
+    function getAvailableCollateral(address _of) external view override returns(uint){
+        return(availableCollateral[_of]);
+    }
+
+    function lockCollateral(address _of, uint _amount) external override{
+        require(_amount <= availableCollateral[_of], "User does not have enough collateral to lock");
+        _removeCollateralForUser(_of, _amount);
     }
 
     function getBalance() public view returns (uint256 balance){
