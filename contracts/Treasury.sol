@@ -21,16 +21,18 @@ contract Treasury is Ownable, ISwapReceiver {
     IGovToken public nativeToken;
     IUniswapV2Router02 public dex;
 
+    address public swaps;
     uint256 public totalOwedCollateral;
     mapping(address => uint256) public availableCollateral;
     mapping(address => uint256) public strategiesApprovedBalances;
 
-    constructor(address _stableCoin, address _nativeToken) Ownable(){
+    constructor(address _stableCoin, address _nativeToken, address _swaps) Ownable(){
         stablecoin = IERC20(_stableCoin);
         nativeToken = IGovToken(_nativeToken);
         dex = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         stablecoin.approve(address(dex),2**256 - 1);
         nativeToken.approve(address(dex),2**256 - 1);
+        swaps = _swaps;
     }
 
     event NewSettlement(int amount);
@@ -63,16 +65,26 @@ contract Treasury is Ownable, ISwapReceiver {
     function verifyNewSwap(address _swapCreator, uint _amountUnderlying) external view override returns(bool){
         return(strategiesApprovedBalances[_swapCreator] >= _amountUnderlying);
     }
-
-    function settle(int _usdSettlement, uint _collateralToFree, address _recipient) override external{
-        require(strategiesApprovedBalances[msg.sender] >= 0,"Only a valid strategy can call this");
+    int public Test;
+    uint public Test2;
+    function settle(int _usdSettlement, uint _collateralToFree, uint _underlyingToFree, address _recipient, address _strategy) override external{
+        require(msg.sender == swaps,"Only the swaps contract can call this");
         _addCollateralForUser(_recipient, _collateralToFree);
+        IStrategy(_strategy).closeSwap(_underlyingToFree);
 
         /// todo request funds from strategy to settle with instead of internal balances
         if(_usdSettlement == 0){return;}
         if(_usdSettlement > 0){
-            stablecoin.transfer(_recipient, uint(_usdSettlement));
+            if(int(getBalance()) >= _usdSettlement){
+                stablecoin.transfer(_recipient, uint(_usdSettlement));
+            }else{
+                int price = IStrategy(_strategy).getPriceUnderlyingUSD(1 ether);
+                uint toSwap = uint((_usdSettlement * 1 ether) / price);
+                IStrategy(_strategy).removeFunds(toSwap, _recipient);
+            }
         }else{
+            Test = _usdSettlement;
+            Test2 = uint256(_usdSettlement * -1);
             _removeCollateralForUser(_recipient, uint256(_usdSettlement * -1));
         }
         emit NewSettlement(_usdSettlement);

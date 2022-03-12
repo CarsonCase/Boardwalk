@@ -38,6 +38,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
     struct asset{
         int96 flowRateForAssets;
         uint amountUnderlyingExposed;
+        uint lockedCollateral;
         int priceUSD;
         address oracle;
     }
@@ -122,7 +123,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, 0, ownerOf(receiverIndex+1));
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, a.amountUnderlyingExposed, ownerOf(receiverIndex+1), a.oracle);
 
         emit CaughtTermination(_agreementId, flowCancelled);
         _burn(receiverIndex);
@@ -149,7 +150,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, 0, ownerOf(receiverIndex+1));
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, a.amountUnderlyingExposed, ownerOf(receiverIndex+1), a.oracle);
 
         _burn(receiverIndex);
         _burn(receiverIndex+1);
@@ -164,7 +165,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
     function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _oracle) internal{
         _mint(_receiver,index); 
         int usdVal = IStrategy(_oracle).getPriceUnderlyingUSD(_amountUnderlying);
-        asset memory a =asset(_flowRate, _amountUnderlying, usdVal, _oracle);
+        asset memory a =asset(_flowRate, _amountUnderlying, 0, usdVal, _oracle);
         _updateReceiverAssetsOwed(index,a);         
         index++;
  

@@ -20,7 +20,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         uint amountUnderlyingExposed;
         uint lockedCollateral;
         int priceUSD;
-        address oracle;
+        address strategy;
     }
 
     mapping(uint => asset) public receiverAssetsOwed;
@@ -59,27 +59,27 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         asset storage a = receiverAssetsOwed[receiverIndex];
 
         // and also lookup the settlement amount and trigger that in receiver
-        int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1));
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, a.amountUnderlyingExposed, ownerOf(receiverIndex+1), a.strategy);
 
         _burn(receiverIndex);
         _burn(receiverIndex+1);
     }
 
 
-    function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _oracle) internal{
+    function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _strategy) internal{
         _mint(_receiver,index); 
-        int usdVal = IStrategy(_oracle).getPriceUnderlyingUSD(_amountUnderlying);
-        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying), usdVal, _oracle);
+        int usdVal = IStrategy(_strategy).getPriceUnderlyingUSD(_amountUnderlying);
+        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying), usdVal, _strategy);
         _updateReceiverAssetsOwed(index,a);         
         index++;
  
     }
     
     function _mintPayer(address _payer) internal{
-        _mint(_payer,index); 
+        _mint(_payer,index);
         index++;
     }
 

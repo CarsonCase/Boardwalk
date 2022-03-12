@@ -47,14 +47,14 @@ contract ETHHODLStrategy is StrategyStandard{
         dex.swapExactTokensForETH(_amountInvestment,0,path,address(this),block.timestamp + 30);
     }
 
-    function removeFunds(uint256 _amountToRemove) public override onlyOwner{
-        super.removeFunds(_amountToRemove);
+    function removeFunds(uint256 _amountToRemove, address _receiver) public override onlyOwner{
+        super.removeFunds(_amountToRemove, _receiver);
 
         address[] memory path = new address[](2);
         path[0] = dex.WETH();
         path[1] = stablecoin;
 
-        dex.swapExactETHForTokens{value: _amountToRemove}(0, path, treasury, block.timestamp + 30);
+        dex.swapExactETHForTokens{value: _amountToRemove}(0, path, _receiver, block.timestamp + 30);
     }
 
     function getPriceUnderlyingUSD(uint _underlyingAm) public view override returns(int){

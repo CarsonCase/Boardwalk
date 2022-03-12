@@ -47,8 +47,12 @@ abstract contract StrategyStandard is Ownable{
     /**
     * @dev function for owner (treasury) to remove funds 
      */
-    function removeFunds(uint256 _amountToRemove) public virtual onlyOwner{
+    function removeFunds(uint256 _amountToRemove, address _receiver) public virtual onlyOwner{
         require(underlyingInvested > underlyingExposedToSwaps + _amountToRemove, "There's not enough free assets in this strategy to remove this amount"); 
+    }
+
+    function closeSwap(uint256 _amountToRemove) public virtual onlyOwner{
+        underlyingExposedToSwaps -= _amountToRemove;
     }
 
     /**
