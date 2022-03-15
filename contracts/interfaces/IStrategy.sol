@@ -3,4 +3,5 @@ interface IStrategy{
     function getPriceUnderlyingUSD(uint _underlyingAm) external view returns(int);
     function closeSwap(uint256 _amountToRemove) external;
     function removeFunds(uint256 _amountToRemove, address _receiver) external;
+    function getAmountOfUnderlyingForUSD(int _amount) external view returns(int);
 }

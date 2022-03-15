@@ -26,9 +26,9 @@ module.exports = {
       timeoutBlocks: 200,
     },
     hardhat: {
-      forking: {
-        url: `https://kovan.infura.io/v3/f553bd384ac24141914e8fe56a7f3dd5`,
-      },
+      // forking: {
+      //   url: `https://kovan.infura.io/v3/f553bd384ac24141914e8fe56a7f3dd5`,
+      // },
     },
   }
 };

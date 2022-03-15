@@ -61,9 +61,10 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         // and also lookup the settlement amount and trigger that in receiver
         int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
-        // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, a.amountUnderlyingExposed, ownerOf(receiverIndex+1), a.strategy);
+        IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.strategy);
 
+        // payer index is always +1 receiver
         _burn(receiverIndex);
         _burn(receiverIndex+1);
     }

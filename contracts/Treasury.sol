@@ -43,7 +43,7 @@ contract Treasury is Ownable, ISwapReceiver {
     }
 
     function transferFundsToStrategy(address _strategy, uint _amount) external onlyOwner{
-        require(_amount < getBalance(), "Can not deposit more than the available balance of the treasury");
+        require(_amount <= getBalance(), "Can not deposit more than the available balance of the treasury");
         stablecoin.approve(_strategy,_amount);
         IStrategy(_strategy).fund(_amount);
         strategiesApprovedBalances[_strategy] = 2**256-1;        // give strategies full access for now
@@ -65,26 +65,22 @@ contract Treasury is Ownable, ISwapReceiver {
     function verifyNewSwap(address _swapCreator, uint _amountUnderlying) external view override returns(bool){
         return(strategiesApprovedBalances[_swapCreator] >= _amountUnderlying);
     }
-    int public Test;
-    uint public Test2;
-    function settle(int _usdSettlement, uint _collateralToFree, uint _underlyingToFree, address _recipient, address _strategy) override external{
+
+    uint public Test;
+    function settle(int _usdSettlement, uint _collateralToFree, address _recipient, address _strategy) override external{
         require(msg.sender == swaps,"Only the swaps contract can call this");
         _addCollateralForUser(_recipient, _collateralToFree);
-        IStrategy(_strategy).closeSwap(_underlyingToFree);
-
-        /// todo request funds from strategy to settle with instead of internal balances
         if(_usdSettlement == 0){return;}
         if(_usdSettlement > 0){
             if(int(getBalance()) >= _usdSettlement){
                 stablecoin.transfer(_recipient, uint(_usdSettlement));
             }else{
-                int price = IStrategy(_strategy).getPriceUnderlyingUSD(1 ether);
-                uint toSwap = uint((_usdSettlement * 1 ether) / price);
+                uint toSwap = uint(IStrategy(_strategy).getAmountOfUnderlyingForUSD(_usdSettlement));
+                        Test = toSwap;
+
                 IStrategy(_strategy).removeFunds(toSwap, _recipient);
             }
         }else{
-            Test = _usdSettlement;
-            Test2 = uint256(_usdSettlement * -1);
             _removeCollateralForUser(_recipient, uint256(_usdSettlement * -1));
         }
         emit NewSettlement(_usdSettlement);

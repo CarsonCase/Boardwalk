@@ -12,6 +12,10 @@ interface IOracle{
     function priceOf(address) external view returns(int,uint8);
 }
 
+interface ISwaps{
+    function newSwap(address _receiver, address _payer, int96 _requiredFlowRate, uint _amountUnderlying) external;
+}
+
 /**
 * @title StrategyStandard
 * @author Caron Case (carsonpcase@gmail.com)
@@ -23,11 +27,17 @@ abstract contract StrategyStandard is Ownable{
     uint256 public underlyingInvested;
     uint256 public underlyingExposedToSwaps;
     IOracle public oracle;
+    ISwaps public swaps;
 
     constructor(address _treasury, address _oracle) Ownable(){
         treasury = _treasury;
         stablecoin = address(ITreasury(_treasury).stablecoin());
         oracle = IOracle(_oracle);
+    }
+
+    modifier onlySwaps(){
+        require(msg.sender == address(swaps), "StrategyStandard: Only Swaps contract can call this function");
+        _;
     }
 
     function getPriceUnderlyingUSD(uint _underlyingAm) external virtual returns(int){
@@ -51,7 +61,7 @@ abstract contract StrategyStandard is Ownable{
         require(underlyingInvested > underlyingExposedToSwaps + _amountToRemove, "There's not enough free assets in this strategy to remove this amount"); 
     }
 
-    function closeSwap(uint256 _amountToRemove) public virtual onlyOwner{
+    function closeSwap(uint256 _amountToRemove) public virtual onlySwaps{
         underlyingExposedToSwaps -= _amountToRemove;
     }
 
