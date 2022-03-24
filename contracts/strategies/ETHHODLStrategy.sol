@@ -19,6 +19,9 @@ contract ETHHODLStrategy is StrategyStandard{
 
     int priceUSD = 2;
     int96 apr = 12;
+
+    uint constant SLIPPAGE = 5;                     // making this owner controlled is not a bad idea
+    uint constant ONE_HUNDRED_PERCENT = 100;
     
     constructor(address _swaps, address _treasury, address _oracle, address _dex) StrategyStandard(_treasury, _oracle){
         swaps = ISwaps(_swaps);
@@ -41,17 +44,22 @@ contract ETHHODLStrategy is StrategyStandard{
         super.fund(_amountInvestment);
         address[] memory path = new address[](2);
         path[0] = stablecoin;
-        path[1] = dex.WETH();
+        path[1] = eth;
 
-        dex.swapExactTokensForETH(_amountInvestment,0,path,address(this),block.timestamp + 30);
+        uint minOut = _getMinOut(_amountInvestment);
+        dex.swapExactTokensForETH(_amountInvestment,minOut,path,address(this),block.timestamp + 30);
     }
+
     function removeFunds(uint256 _amountToRemove, address _receiver) public override onlyOwner{
+        require(_amountToRemove <= address(this).balance, "Not enough eth in strategy");
         super.removeFunds(_amountToRemove, _receiver);
 
         address[] memory path = new address[](2);
-        path[0] = dex.WETH();
+        path[0] = eth;
         path[1] = stablecoin;
-        dex.swapExactETHForTokens{value: _amountToRemove}(0, path, _receiver, block.timestamp + 30);
+
+        uint minOut = _getMinOut(_amountToRemove);
+        dex.swapExactETHForTokens{value: _amountToRemove}(minOut, path, _receiver, block.timestamp + 30);
     }
 
     function getPriceUnderlyingUSD(uint _underlyingAm) public view override returns(int){
@@ -59,7 +67,7 @@ contract ETHHODLStrategy is StrategyStandard{
         return((int(_underlyingAm) * price) / int(10**decimals));
     }
 
-    function getAmountOfUnderlyingForUSD(int _amount) public view returns(int){
+    function getAmountOfUnderlyingForUSD(int _amount) public view override returns(int){
         (int price, uint8 decimals) = oracle.priceOf(eth);
         return((int(10**decimals) * (int(_amount)) / price));
     }
@@ -73,6 +81,10 @@ contract ETHHODLStrategy is StrategyStandard{
      */
     function _issueSwap(address _issueTo, uint _amountUnderlying) internal override{
         swaps.newSwap(treasury,_issueTo, getFlowRate(_amountUnderlying),_amountUnderlying);
+    }
+
+    function _getMinOut(uint _amountIn) internal pure returns(uint minOut){
+        minOut = (_amountIn * (ONE_HUNDRED_PERCENT - SLIPPAGE)) / ONE_HUNDRED_PERCENT;
     }
 
 

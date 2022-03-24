@@ -2,7 +2,7 @@ const { hexStripZeros } = require("@ethersproject/bytes");
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
-const liquidityAmount = ethers.utils.parseEther('6',18);
+const liquidityAmount = ethers.utils.parseEther('10',18);
 
 let uni, stable, govToken, treasury, swaps, oracle;
 let owner, user1, user2;
@@ -54,14 +54,28 @@ describe("Dream Tests", ()=>{
       ethers.utils.parseEther("0.05"),
       );
 
+    // For known issues found with the random loop bellow 
     testSwapWithStrategy(
-      "Huge ETH crash",
-      ethers.utils.parseEther("1"),
-      ethers.utils.parseEther("0.40"),
-      ethers.utils.parseEther("0.1"),
-      ethers.utils.parseEther("0.005"),
+      "Known Error",
+      ethers.utils.parseEther("50"),
+      ethers.utils.parseEther(46.653885447965514.toString(), 18),
+      ethers.utils.parseEther("50"),
       ethers.utils.parseEther("0.05"),
+      ethers.utils.parseEther("0.5"),
       );
+
+    for(let i = 0; i < 10; i++){
+      const randNum = Math.random() * 100;
+
+      testSwapWithStrategy(
+        "Random ETH movement test #" + String(i+1) + "\n50 -> " + String(randNum),
+        ethers.utils.parseEther("50"),                    // starting at 50
+        ethers.utils.parseUnits(randNum.toString(), 18),  // ending between 1 and 100
+        ethers.utils.parseEther("10"),
+        ethers.utils.parseEther("0.005"),
+        ethers.utils.parseEther("0.05"),
+        );  
+    }
 });
 
 function testSwapWithStrategy(
@@ -124,15 +138,13 @@ function testSwapWithStrategy(
       });
   
       it("owners adds liquidity for tokens", async()=>{
-        await stable.connect(owner).approve(uni.address, liquidityAmount);
+        await stable.connect(owner).approve(uni.address, ethers.utils.parseEther("50"));
         await govToken.connect(owner).approve(uni.address, liquidityAmount);
         const balStable = await stable.balanceOf(owner.address);
         const balGov = await govToken.balanceOf(owner.address);
   
-        assert(balGov.gt(liquidityAmount) && balStable.gt(liquidityAmount));
+        assert(balGov.gte(liquidityAmount) && balStable.gte(ethers.utils.parseEther("50")), "Owner doesn't have enough tokens");
   
-        await stable.connect(owner).approve(uni.address, liquidityAmount);
-        await govToken.connect(owner).approve(uni.address, liquidityAmount);
         const approved = await govToken.allowance(owner.address, uni.address);
         
         // commented out for fake dex
@@ -147,15 +159,14 @@ function testSwapWithStrategy(
         //   (await getLastBlockTimestamp()) + 30
         // );
   
-        await stable.connect(owner).approve(uni.address, liquidityAmount);
         await uni.connect(owner).addLiquidityETH(
           stable.address,
-          liquidityAmount,
+          ethers.utils.parseEther("50"),
           0,
           0,
           owner.address,
           (await getLastBlockTimestamp()) + 30,
-          {value: liquidityAmount}
+          {value: ethers.utils.parseEther("50")}
         );
   
       });
@@ -233,22 +244,24 @@ function testSwapWithStrategy(
         const ethBefore = await ethers.provider.getBalance(user.address);
         const balBefore = await stable.balanceOf(user.address);
         const agreementId = await swaps._generateFlowId(user.address,swaps.address);
-    
+
         await swaps.connect(user).afterAgreementTerminated(agreementId);
         const balAfter = await stable.balanceOf(user.address);
         const colAfter = await treasury.availableCollateral(user.address);
         const ethAfter = await ethers.provider.getBalance(user.address);
 
         if(ethEndValueInUSD.gt(ethStartValueInUSD)){
-          const factor = (ethEndValueInUSD.sub(ethStartValueInUSD));
-          const Test = await treasury.Test();
-          assert(balAfter.sub(balBefore).toString() == factor.mul(swapBuyAmount).div(ethStartValueInUSD).toString() ||
-          balAfter.sub(balBefore).add('1').toString() == factor.mul(swapBuyAmount).div(ethStartValueInUSD).toString());
+          assert.isAtMost(balAfter.sub(balBefore).sub(ethEndValueInUSD.sub(ethStartValueInUSD)).mul(swapBuyAmount).div(ethers.utils.parseEther("1")), 10);
         }else{
           const factor = (ethStartValueInUSD.sub(ethEndValueInUSD));
           
           assert.equal((balAfter.sub(balBefore).toString()), "0");
-          assert(colAfter.gte(collateralDeposit.sub(factor.mul(swapBuyAmount).div(ethStartValueInUSD))));
+          const change = ethStartValueInUSD.sub(ethEndValueInUSD).mul(swapBuyAmount).div(ethers.utils.parseEther("1"));
+          if(change.gt(collateralDeposit.sub(colAfter))){
+            assert.equal(colAfter,0);
+          }else{
+            assert.equal(collateralDeposit.sub(colAfter).toString(), change.toString())
+          }
         }
       });
     

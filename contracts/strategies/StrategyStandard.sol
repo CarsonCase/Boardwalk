@@ -40,10 +40,16 @@ abstract contract StrategyStandard is Ownable{
         _;
     }
 
-    function getPriceUnderlyingUSD(uint _underlyingAm) external virtual returns(int){
+    function getPriceUnderlyingUSD(uint _underlyingAm) external view virtual returns(int){
         (int price, uint8 decimals) = oracle.priceOf(stablecoin);
         return((int(_underlyingAm) * price) / int(10**decimals));
     }
+
+    function getAmountOfUnderlyingForUSD(int _amount) public view virtual returns(int){
+        (int price, uint8 decimals) = oracle.priceOf(stablecoin);
+        return((int(10**decimals) * (int(_amount)) / price));
+    }
+
 
     /**
     * @dev fund function to provide funds to the strategy
@@ -73,6 +79,7 @@ abstract contract StrategyStandard is Ownable{
         underlyingExposedToSwaps += _amountUnderlying;
         _issueSwap(msg.sender, _amountUnderlying);
     }
+    
 
     /**
     * @dev handles logic of issuing swap
@@ -81,4 +88,5 @@ abstract contract StrategyStandard is Ownable{
         // issue NFT with supperfuild superapp
         // and send other end of NFT to treasury
     }
+
 }

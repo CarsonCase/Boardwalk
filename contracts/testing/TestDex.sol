@@ -7,6 +7,10 @@ interface IOracle{
     function priceOf(address) external view returns(int,uint8);
 }
 
+interface mIERC20 is IERC20{
+    function mint(address,uint) external;
+}
+
 contract TestDex{
     address weth;
     address stablecoin;
@@ -35,6 +39,7 @@ contract TestDex{
     {
         require(path[0] == weth, "must swap WETH");
         require(path[1] == stablecoin, "Must be swapping to stablecoin");
+        require(msg.value > 0, "Cannot swap 0");
         IERC20(path[1]).transfer(to, uint(_getPriceUnderlyingUSD(msg.value)));
         amounts = new uint[](path.length);
         amounts[0] = msg.value;
@@ -54,7 +59,7 @@ contract TestDex{
         require(path[1] == weth, "must be swapping to WETH");
         require(path[0] == stablecoin, "Must swap stablecoin");
         IERC20(path[0]).transferFrom(msg.sender, address(this), amountIn);
-        payable(msg.sender).transfer(uint(_getPriceOfUSDInETH(amountIn)));
+        payable(msg.sender).transfer(uint(_getAmountOfUnderlyingForUSD(int(amountIn))));
         amounts = new uint[](path.length);
         amounts[0] = amountIn;
         amounts[1] = amountIn;
@@ -77,7 +82,7 @@ contract TestDex{
         return((int(_underlyingAm) * price) / int(10**decimals));
     }
 
-    function _getPriceOfUSDInETH(uint _amount) public view returns(int){
+    function _getAmountOfUnderlyingForUSD(int _amount) public view returns(int){
         (int price, uint8 decimals) = oracle.priceOf(weth);
         return((int(10**decimals) * (int(_amount)) / price));
     }
