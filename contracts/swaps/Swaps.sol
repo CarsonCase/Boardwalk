@@ -40,7 +40,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         uint amountUnderlyingExposed;
         uint lockedCollateral;
         int priceUSD;
-        address oracle;
+        address strategy;
     }
 
     mapping(uint => asset) public receiverAssetsOwed;
@@ -81,6 +81,8 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         bytes32 fid = _generateFlowId(_payer, address(this));
         flowIDToReceiverNFT[fid] = index;
 
+        ISwapReceiver(_receiver).lockCollateral(_payer, _getRequiredCollateral(_amountUnderlying));
+
         // since funds are coming here, redirect the same amount out to the actual receiver
         _newFlow(_receiver, initialFlowRate);
         // mint NFTs
@@ -120,10 +122,12 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         }
 
         // and also lookup the settlement amount and trigger that in receiver
-        int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
         
+        IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
+
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.oracle);
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.strategy);
 
         emit CaughtTermination(_agreementId, flowCancelled);
         _burn(receiverIndex);
@@ -147,10 +151,12 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         }
 
         // and also lookup the settlement amount and trigger that in receiver
-        int settlement = IStrategy(a.oracle).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        
+        IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
         
         // payer index is always +1 receiver
-        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.oracle);
+        ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.strategy);
 
         _burn(receiverIndex);
         _burn(receiverIndex+1);
@@ -162,13 +168,12 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
             == keccak256("org.superfluid-finance.agreements.ConstantFlowAgreement.v1");
     }
 
-    function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _oracle) internal{
+    function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _strategy) internal{
         _mint(_receiver,index); 
-        int usdVal = IStrategy(_oracle).getPriceUnderlyingUSD(_amountUnderlying);
-        asset memory a =asset(_flowRate, _amountUnderlying, 0, usdVal, _oracle);
+        int usdVal = IStrategy(_strategy).getPriceUnderlyingUSD(_amountUnderlying);
+        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying), usdVal, _strategy);
         _updateReceiverAssetsOwed(index,a);         
         index++;
- 
     }
 
     function _newFlow(address newReceiver, int96 _flowRate) internal{
@@ -264,7 +269,12 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         receiverAssetsOwed[_index] = a;
     }
 
-    function _generateFlowId(address sender, address receiver) public pure returns(bytes32 id) {
+    function _getRequiredCollateral(uint _amountUnderlying) internal pure returns(uint){
+        return((_amountUnderlying) / 10);
+    }
+
+
+    function _generateFlowId(address sender, address receiver) private pure returns(bytes32 id) {
         return keccak256(abi.encode(sender, receiver));
     }
 }
