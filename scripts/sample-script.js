@@ -1,25 +1,30 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
 
+// variables for rinkeby
+const stable = "";
+const uni = "";
+
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  // const GovToken = await ethers.getContractFactory("GovernanceToken");
+  // govToken = await GovToken.deploy(stable);
+  // await govToken.deployed();
 
-  // We get the contract to deploy
-  const Greeter = await hre.ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  // const Swaps = await ethers.getContractFactory("TestSwapsNoSuperfluid");
+  // swaps = await Swaps.deploy(stable);
+  // await swaps.deployed();
 
-  await greeter.deployed();
+  // const Treasury = await ethers.getContractFactory("Treasury");
+  // treasury = await Treasury.deploy(stable, govToken.address, swaps.address);
+  // await treasury.deployed();
 
-  console.log("Greeter deployed to:", greeter.address);
+  // const Oracle = await ethers.getContractFactory("TestOracle");
+  // oracle = await Oracle.deploy();
+  // await oracle.deployed();
+
+  // const Strategy = await hre.ethers.getContractFactory("ETHHODLStrategy");
+  // strategy = await Strategy.deploy(swaps.address, treasury.address, oracle.address, uni);
+  // await strategy.deployed();
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

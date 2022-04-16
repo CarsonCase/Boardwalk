@@ -1,15 +1,32 @@
-# Basic Sample Hardhat Project
+Deployed Contracts on Rinkeby
+=============================
+```
+verifying ETHHODLStrategy (0x860863842B9965B51A1c3A184A65D68fe4147A3f) ...
+waiting for result...
+ => contract ETHHODLStrategy is now verified
+verifying GovernanceToken (0x9770CAdd2EC906589F01B4f59071F12962029082) ...
+waiting for result...
+ => contract GovernanceToken is now verified
+verifying Swaps (0xa3b171dE7DD7D732140c3628AcF2760Ee196C4c6) ...
+waiting for result...
+ => contract Swaps is now verified
+verifying TestOracle (0x80cf0e0d515f78cD6EDE4D0F07F0C574BeC09664) ...
+waiting for result...
+ => contract TestOracle is now verified
+verifying Treasury (0x6D992c2a6B112F856d2D7da364b5453c6c94f60e) ...
+waiting for result...
+ => contract Treasury is now verified
+```
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
+Env File
+========
+To deploy create a .env file with the following
+```
+ETHERSCAN_API_KEY=""
+NETWORK_ENDPOINT_RINKEBY=""
+ACCOUNT_0_PRIVATE_KEY=""
+STABLECOIN_ADDRESS=""
+UNISWAP_ADDRESS="0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+SUPERFLUID_HOST="0xeD5B5b32110c3Ded02a07c8b8e97513FAfb883B6"
+SUPERFLUID_CFA="0xF4C5310E51F6079F601a5fb7120bC72a70b96e2A"
 ```
