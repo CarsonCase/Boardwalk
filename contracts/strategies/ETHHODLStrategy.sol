@@ -46,7 +46,7 @@ contract ETHHODLStrategy is StrategyStandard{
         path[0] = stablecoin;
         path[1] = eth;
 
-        uint minOut = _getMinOut(_amountInvestment);
+        uint minOut = _getMinOut(_amountInvestment, path);
         dex.swapExactTokensForETH(_amountInvestment,minOut,path,address(this),block.timestamp + 30);
     }
 
@@ -58,7 +58,7 @@ contract ETHHODLStrategy is StrategyStandard{
         path[0] = eth;
         path[1] = stablecoin;
 
-        uint minOut = _getMinOut(_amountToRemove);
+        uint minOut = _getMinOut(_amountToRemove, path);
         dex.swapExactETHForTokens{value: _amountToRemove}(minOut, path, _receiver, block.timestamp + 30);
     }
 
@@ -83,8 +83,12 @@ contract ETHHODLStrategy is StrategyStandard{
         swaps.newSwap(treasury,_issueTo, getFlowRate(_amountUnderlying),_amountUnderlying);
     }
 
-    function _getMinOut(uint _amountIn) internal pure returns(uint minOut){
-        minOut = (_amountIn * (ONE_HUNDRED_PERCENT - SLIPPAGE)) / ONE_HUNDRED_PERCENT;
+    /**
+    * todo: Make this not dumb. Needs to actually use the router to find the price of the token...
+     */
+    function _getMinOut(uint _amountIn, address[] memory _path) internal view returns(uint minOut){
+        uint out = dex.getAmountsOut(_amountIn, _path)[_path.length-1];
+        minOut = (out * (ONE_HUNDRED_PERCENT - SLIPPAGE)) / ONE_HUNDRED_PERCENT;
     }
 
 

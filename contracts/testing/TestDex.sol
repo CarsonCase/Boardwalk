@@ -26,6 +26,17 @@ contract TestDex{
         return weth;
     }
 
+    function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts){
+        amounts = new uint[](path.length);
+        if(path[0] == weth){
+            amounts[0] = amountIn;
+            amounts[1] = uint(_getPriceUnderlyingUSD(amountIn));
+        }else{
+            amounts[0] = amountIn;
+            amounts[1] = uint(_getAmountOfUnderlyingForUSD(int(amountIn)));
+        }
+    }
+
 
     function swapExactETHForTokens(
         uint amountOutMin, 
