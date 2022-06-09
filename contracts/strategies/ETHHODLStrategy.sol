@@ -41,13 +41,17 @@ contract ETHHODLStrategy is StrategyStandard{
     }
 
     function fund(uint256 _amountInvestment) public override onlyOwner{
-        super.fund(_amountInvestment);
+        IERC20(stablecoin).transferFrom(treasury, address(this), _amountInvestment);
         address[] memory path = new address[](2);
         path[0] = stablecoin;
         path[1] = eth;
 
         uint minOut = _getMinOut(_amountInvestment, path);
+        uint balBefore = address(this).balance;
         dex.swapExactTokensForETH(_amountInvestment,minOut,path,address(this),block.timestamp + 30);
+
+        // increase underlying invested by the amount of ETH added
+        underlyingInvested += (address(this).balance - balBefore);
     }
 
     function removeFunds(uint256 _amountToRemove, address _receiver) public override onlyOwner{
