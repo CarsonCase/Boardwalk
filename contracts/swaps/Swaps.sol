@@ -73,6 +73,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
 
     /// @dev to be called by strategies. Anyone can make swaps. But it's the strategies that have the assets
     function newSwap(address _receiver, address _payer, int96 _requiredFlowRate, uint _amountUnderlying) external{
+        /// todo add try catch here
         (, int96 initialFlowRate,,) = _cfa.getFlow(token, _payer,address(this));
         require(ISwapReceiver(_receiver).verifyNewSwap(msg.sender,_amountUnderlying), "This receiver did not permit you to issue this swap");
         require(initialFlowRate >= _requiredFlowRate, 

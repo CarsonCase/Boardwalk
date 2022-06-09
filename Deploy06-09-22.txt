@@ -1,0 +1,11 @@
+Nothing to compile
+transaction 0xd7d302ca0d6fbdb2804962b51a388424a606b80c4f3d85c52362923e59fc19a9 still pending... It used a gas pricing config of (gasPrice: 2500000011 wei) ,
+              current gas price is 1000000009 wei
+              new baseFee is 9
+              
+[?25l[36m?[39m [1mChoose what to do with the pending transaction:[22m [2m…[22m 
+[36m▸[39m [36m[4mincrease gas[24m[39m
+  continue waiting
+  skip (forget tx)[3A[53G[3B[2K[F[2K[F[2K[F[2K[1G[35m✖[39m [1mChoose what to do with the pending transaction:[22m [2m·[22m 
+
+[?25h
