@@ -43,7 +43,7 @@ abstract contract StrategyStandard is Ownable{
     }
 
     /// @dev not a variable so it can be overriden
-    function minColatearl() external virtual returns(uint){
+    function minColatearl() external view virtual returns(uint){
         return 0;
     }
 

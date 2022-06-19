@@ -34,7 +34,7 @@ contract ETHHODLStrategy is StrategyStandard{
     }
 
     /// @dev 10 out of 100 (ONE_HUNDRED_PERCENT)
-    function minColatearl() external override returns(uint){
+    function minColatearl() external view override returns(uint){
         return 10;
     }
 

@@ -22,7 +22,7 @@ module.exports = {
   solidity: "0.8.4",
   networks: {
     kovan: {
-      url: `https://kovan.infura.io/v3/f553bd384ac24141914e8fe56a7f3dd5`,
+      url: process.env.NETWORK_ENDPOINT_KOVAN,
       network_id: 42, // Kovan's id
       networkCheckTimeout: 999999,
       timeoutBlocks: 200,

@@ -270,7 +270,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         receiverAssetsOwed[_index] = a;
     }
 
-    function _getRequiredCollateral(uint _amountUnderlying, address _strategy) internal pure returns(uint){
+    function _getRequiredCollateral(uint _amountUnderlying, address _strategy) internal view returns(uint){
         IStrategy strat = IStrategy(_strategy);
         return(((_amountUnderlying) * strat.minCollateral()) / strat.ONE_HUNDRED_PERCENT());
     }
