@@ -22,6 +22,8 @@ interface ISwaps{
     contract to standardize what strategies do 
 */
 abstract contract StrategyStandard is Ownable{
+    uint constant ONE_HUNDRED_PERCENT = 100;
+
     address public immutable treasury;
     address internal stablecoin;
     uint256 public underlyingInvested;
@@ -38,6 +40,11 @@ abstract contract StrategyStandard is Ownable{
     modifier onlySwaps(){
         require(msg.sender == address(swaps), "StrategyStandard: Only Swaps contract can call this function");
         _;
+    }
+
+    /// @dev not a variable so it can be overriden
+    function minColatearl() external virtual returns(uint){
+        return 0;
     }
 
     function getPriceUnderlyingUSD(uint _underlyingAm) external view virtual returns(int){

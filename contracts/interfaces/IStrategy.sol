@@ -1,4 +1,7 @@
 interface IStrategy{
+    function minCollateral() external returns(uint);
+    function ONE_HUNDRED_PERCENT() external returns(uint);
+    
     function fund(uint256 _amountInvestment) external;
     function getPriceUnderlyingUSD(uint _underlyingAm) external view returns(int);
     function closeSwap(uint256 _amountToRemove) external;

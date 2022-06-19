@@ -82,7 +82,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         bytes32 fid = _generateFlowId(_payer, address(this));
         flowIDToReceiverNFT[fid] = index;
 
-        ISwapReceiver(_receiver).lockCollateral(_payer, _getRequiredCollateral(_amountUnderlying));
+        ISwapReceiver(_receiver).lockCollateral(_payer, _getRequiredCollateral(_amountUnderlying, msg.sender));
 
         // since funds are coming here, redirect the same amount out to the actual receiver
         _newFlow(_receiver, initialFlowRate);
@@ -172,7 +172,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
     function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _strategy) internal{
         _mint(_receiver,index); 
         int usdVal = IStrategy(_strategy).getPriceUnderlyingUSD(_amountUnderlying);
-        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying), usdVal, _strategy);
+        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying, _strategy), usdVal, _strategy);
         _updateReceiverAssetsOwed(index,a);         
         index++;
     }
@@ -270,8 +270,9 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         receiverAssetsOwed[_index] = a;
     }
 
-    function _getRequiredCollateral(uint _amountUnderlying) internal pure returns(uint){
-        return((_amountUnderlying) / 10);
+    function _getRequiredCollateral(uint _amountUnderlying, address _strategy) internal pure returns(uint){
+        IStrategy strat = IStrategy(_strategy);
+        return(((_amountUnderlying) * strat.minCollateral()) / strat.ONE_HUNDRED_PERCENT());
     }
 
 

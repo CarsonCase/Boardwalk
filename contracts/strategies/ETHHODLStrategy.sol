@@ -17,11 +17,9 @@ contract ETHHODLStrategy is StrategyStandard{
     IUniswapV2Router02 public dex;
     uint constant secondsInYear = 31540000;
 
-    int priceUSD = 2;
     int96 apr = 12;
 
     uint constant SLIPPAGE = 5;                     // making this owner controlled is not a bad idea
-    uint constant ONE_HUNDRED_PERCENT = 100;
     
     constructor(address _swaps, address _treasury, address _oracle, address _dex) StrategyStandard(_treasury, _oracle){
         swaps = ISwaps(_swaps);
@@ -35,10 +33,11 @@ contract ETHHODLStrategy is StrategyStandard{
 
     }
 
-    // TEST only
-    function updatePriceE18(int _new) external{
-        priceUSD = _new;
+    /// @dev 10 out of 100 (ONE_HUNDRED_PERCENT)
+    function minColatearl() external override returns(uint){
+        return 10;
     }
+
 
     function fund(uint256 _amountInvestment) public override onlyOwner{
         IERC20(stablecoin).transferFrom(treasury, address(this), _amountInvestment);
