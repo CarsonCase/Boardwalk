@@ -116,7 +116,7 @@ function testSwapWithStrategy(
       uni = await FakeDex.deploy(oracle.address,stable.address);
 
       const Strategy = await hre.ethers.getContractFactory("ETHHODLStrategy");
-      strategy = await Strategy.deploy(swaps.address, treasury.address, oracle.address, uni.address);
+      strategy = await Strategy.deploy(swaps.address, treasury.address, uni.address);
       await strategy.deployed();
 
       const ethAddress = await strategy.eth();

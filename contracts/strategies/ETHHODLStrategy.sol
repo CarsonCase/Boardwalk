@@ -12,6 +12,8 @@ import "../interfaces/IUniswapV2Router02.sol";
 */
 contract ETHHODLStrategy is StrategyStandard{
     // for testing
+    uint public priceMultiplier = 1;
+
     address public eth;
 
     IUniswapV2Router02 public dex;
@@ -21,7 +23,12 @@ contract ETHHODLStrategy is StrategyStandard{
 
     uint constant SLIPPAGE = 5;                     // making this owner controlled is not a bad idea
     
-    constructor(address _swaps, address _treasury, address _oracle, address _dex) StrategyStandard(_treasury, _oracle){
+    /// @dev THIS IS FOR TESTING ONLY
+    function changeMultiplier(uint _new) external{
+        priceMultiplier = _new;
+    }
+
+    constructor(address _swaps, address _treasury, address _dex) StrategyStandard(_treasury){
         swaps = ISwaps(_swaps);
         dex = IUniswapV2Router02(_dex);
         IERC20(stablecoin).approve(_dex,2**256-1);
@@ -65,18 +72,24 @@ contract ETHHODLStrategy is StrategyStandard{
         dex.swapExactETHForTokens{value: _amountToRemove}(minOut, path, _receiver, block.timestamp + 30);
     }
 
-    function getPriceUnderlyingUSD(uint _underlyingAm) public view override returns(int){
-        (int price, uint8 decimals) = oracle.priceOf(eth);
-        return((int(_underlyingAm) * price) / int(10**decimals));
+    function getPriceUnderlyingStable(uint _underlyingAm) public view override returns(int){
+        address[] memory path = new address[](2);
+        path[0] = stablecoin;
+        path[1] = eth;
+        uint[] memory amountsOut = dex.getAmountsOut(_underlyingAm, path);
+        return(int(priceMultiplier * amountsOut[1]));
     }
 
-    function getAmountOfUnderlyingForUSD(int _amount) public view override returns(int){
-        (int price, uint8 decimals) = oracle.priceOf(eth);
-        return((int(10**decimals) * (int(_amount)) / price));
+    function getAmountOfUnderlyingForStable(int _amount) public view override returns(int){
+        address[] memory path = new address[](2);
+        path[0] = eth;
+        path[1] = stablecoin;
+        uint[] memory amountsOut = dex.getAmountsOut(uint(_amount), path);
+        return(int(priceMultiplier * amountsOut[1]));
     }
 
     function getFlowRate(uint _amountUnderlying) public view returns(int96){
-        return (int96(getPriceUnderlyingUSD(_amountUnderlying/secondsInYear)) * apr) / 100;
+        return (int96(getPriceUnderlyingStable(_amountUnderlying/secondsInYear)) * apr) / 100;
     }
 
     /**

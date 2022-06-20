@@ -19,7 +19,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         int96 flowRateForAssets;
         uint amountUnderlyingExposed;
         uint lockedCollateral;
-        int priceUSD;
+        int priceStable;
         address strategy;
     }
 
@@ -59,7 +59,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
         asset storage a = receiverAssetsOwed[receiverIndex];
 
         // and also lookup the settlement amount and trigger that in receiver
-        int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        int settlement = IStrategy(a.strategy).getPriceUnderlyingStable(a.amountUnderlyingExposed) - a.priceStable;
         
         IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
         ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.strategy);
@@ -72,7 +72,7 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
 
     function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _strategy) internal{
         _mint(_receiver,index); 
-        int usdVal = IStrategy(_strategy).getPriceUnderlyingUSD(_amountUnderlying);
+        int usdVal = IStrategy(_strategy).getPriceUnderlyingStable(_amountUnderlying);
         asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying), usdVal, _strategy);
         _updateReceiverAssetsOwed(index,a);         
         index++;

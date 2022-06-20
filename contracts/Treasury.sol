@@ -75,7 +75,7 @@ contract Treasury is Ownable, ISwapReceiver {
             if(int(getBalance()) >= _usdSettlement){
                 stablecoin.transfer(_recipient, uint(_usdSettlement));
             }else{
-                uint toSwap = uint(IStrategy(_strategy).getAmountOfUnderlyingForUSD(_usdSettlement));
+                uint toSwap = uint(IStrategy(_strategy).getAmountOfUnderlyingForStable(_usdSettlement));
                         Test = toSwap;
 
                 IStrategy(_strategy).removeFunds(toSwap, _recipient);

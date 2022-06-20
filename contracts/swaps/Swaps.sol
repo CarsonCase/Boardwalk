@@ -39,7 +39,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         int96 flowRateForAssets;
         uint amountUnderlyingExposed;
         uint lockedCollateral;
-        int priceUSD;
+        int priceStable;
         address strategy;
     }
 
@@ -123,7 +123,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         }
 
         // and also lookup the settlement amount and trigger that in receiver
-        int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        int settlement = IStrategy(a.strategy).getPriceUnderlyingStable(a.amountUnderlyingExposed) - a.priceStable;
         
         IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
 
@@ -152,7 +152,7 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
         }
 
         // and also lookup the settlement amount and trigger that in receiver
-        int settlement = IStrategy(a.strategy).getPriceUnderlyingUSD(a.amountUnderlyingExposed) - a.priceUSD;
+        int settlement = IStrategy(a.strategy).getPriceUnderlyingStable(a.amountUnderlyingExposed) - a.priceStable;
         
         IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
         
@@ -171,8 +171,8 @@ contract Swaps is ERC721, Ownable, SuperAppBase{
 
     function _mintReceiver(address _receiver, uint _amountUnderlying, int96 _flowRate, address _strategy) internal{
         _mint(_receiver,index); 
-        int usdVal = IStrategy(_strategy).getPriceUnderlyingUSD(_amountUnderlying);
-        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying, _strategy), usdVal, _strategy);
+        int stableVal = IStrategy(_strategy).getPriceUnderlyingStable(_amountUnderlying);
+        asset memory a =asset(_flowRate, _amountUnderlying, _getRequiredCollateral(_amountUnderlying, _strategy), stableVal, _strategy);
         _updateReceiverAssetsOwed(index,a);         
         index++;
     }

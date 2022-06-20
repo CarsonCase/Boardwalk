@@ -8,10 +8,6 @@ interface ITreasury{
     function stablecoin() external returns(IERC20);
 }
 
-interface IOracle{
-    function priceOf(address) external view returns(int,uint8);
-}
-
 interface ISwaps{
     function newSwap(address _receiver, address _payer, int96 _requiredFlowRate, uint _amountUnderlying) external;
 }
@@ -28,13 +24,11 @@ abstract contract StrategyStandard is Ownable{
     address internal stablecoin;
     uint256 public underlyingInvested;
     uint256 public underlyingExposedToSwaps;
-    IOracle public oracle;
     ISwaps public swaps;
 
-    constructor(address _treasury, address _oracle) Ownable(){
+    constructor(address _treasury) Ownable(){
         treasury = _treasury;
         stablecoin = address(ITreasury(_treasury).stablecoin());
-        oracle = IOracle(_oracle);
     }
 
     modifier onlySwaps(){
@@ -47,14 +41,12 @@ abstract contract StrategyStandard is Ownable{
         return 0;
     }
 
-    function getPriceUnderlyingUSD(uint _underlyingAm) external view virtual returns(int){
-        (int price, uint8 decimals) = oracle.priceOf(stablecoin);
-        return((int(_underlyingAm) * price) / int(10**decimals));
+    function getPriceUnderlyingStable(uint _underlyingAm) external view virtual returns(int){
+        return 1;
     }
 
-    function getAmountOfUnderlyingForUSD(int _amount) public view virtual returns(int){
-        (int price, uint8 decimals) = oracle.priceOf(stablecoin);
-        return((int(10**decimals) * (int(_amount)) / price));
+    function getAmountOfUnderlyingForStable(int _amount) public view virtual returns(int){
+        return 1;
     }
 
 
