@@ -73,17 +73,19 @@ contract ETHHODLStrategy is StrategyStandard{
     }
 
     function getPriceUnderlyingStable(uint _underlyingAm) public view override returns(int){
+        require(_underlyingAm > 0, "Looking for price of negative underlying amount");
         address[] memory path = new address[](2);
-        path[0] = stablecoin;
-        path[1] = eth;
+        path[0] = eth;
+        path[1] = stablecoin;
         uint[] memory amountsOut = dex.getAmountsOut(_underlyingAm, path);
         return(int(priceMultiplier * amountsOut[1]));
     }
 
     function getAmountOfUnderlyingForStable(int _amount) public view override returns(int){
+        require(_amount > 0, "Looking for price of negative stablecoin amount");
         address[] memory path = new address[](2);
-        path[0] = eth;
-        path[1] = stablecoin;
+        path[0] = stablecoin;
+        path[1] = eth;
         uint[] memory amountsOut = dex.getAmountsOut(uint(_amount), path);
         return(int(priceMultiplier * amountsOut[1]));
     }

@@ -8,6 +8,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwapReceiver.sol";
 import "../interfaces/IStrategy.sol";
 
+import "hardhat/console.sol";
+
+
 contract TestSwapsNoSuperfluid is ERC721, Ownable{
 
     uint public index = 0;
@@ -60,6 +63,9 @@ contract TestSwapsNoSuperfluid is ERC721, Ownable{
 
         // and also lookup the settlement amount and trigger that in receiver
         int settlement = IStrategy(a.strategy).getPriceUnderlyingStable(a.amountUnderlyingExposed) - a.priceStable;
+        console.log("Settlement in TestSwaps %s", uint(settlement));
+        console.log("priceUnderlyingStable: %s", uint(IStrategy(a.strategy).getPriceUnderlyingStable(a.amountUnderlyingExposed)));
+        console.log("priceStable: %s", uint(a.priceStable));
         
         IStrategy(a.strategy).closeSwap(a.amountUnderlyingExposed);
         ISwapReceiver(receiver).settle(settlement, a.lockedCollateral, ownerOf(receiverIndex+1), a.strategy);
