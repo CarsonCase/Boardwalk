@@ -11,8 +11,6 @@ import "../interfaces/IUniswapV2Router02.sol";
     contract to standardize what strategies do 
 */
 contract ETHHODLStrategy is StrategyStandard{
-    // for testing
-    uint public priceMultiplier = 1;
 
     address public eth;
 
@@ -22,11 +20,6 @@ contract ETHHODLStrategy is StrategyStandard{
     int96 apr = 12;
 
     uint constant SLIPPAGE = 5;                     // making this owner controlled is not a bad idea
-    
-    /// @dev THIS IS FOR TESTING ONLY
-    function changeMultiplier(uint _new) external{
-        priceMultiplier = _new;
-    }
 
     constructor(address _swaps, address _treasury, address _dex) StrategyStandard(_treasury){
         swaps = ISwaps(_swaps);
@@ -78,7 +71,7 @@ contract ETHHODLStrategy is StrategyStandard{
         path[0] = eth;
         path[1] = stablecoin;
         uint[] memory amountsOut = dex.getAmountsOut(_underlyingAm, path);
-        return(int(priceMultiplier * amountsOut[1]));
+        return(int(amountsOut[1]));
     }
 
     function getAmountOfUnderlyingForStable(int _amount) public view override returns(int){
@@ -87,7 +80,7 @@ contract ETHHODLStrategy is StrategyStandard{
         path[0] = stablecoin;
         path[1] = eth;
         uint[] memory amountsOut = dex.getAmountsOut(uint(_amount), path);
-        return(int(priceMultiplier * amountsOut[1]));
+        return(int(amountsOut[1]));
     }
 
     function getFlowRate(uint _amountUnderlying) public view returns(int96){
