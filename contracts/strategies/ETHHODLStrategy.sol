@@ -34,7 +34,7 @@ contract ETHHODLStrategy is StrategyStandard{
     }
 
     /// @dev 10 out of 100 (ONE_HUNDRED_PERCENT)
-    function minColatearl() external view override returns(uint){
+    function minColatearl() external pure override returns(uint){
         return 10;
     }
 
@@ -94,9 +94,6 @@ contract ETHHODLStrategy is StrategyStandard{
         swaps.newSwap(treasury,_issueTo, getFlowRate(_amountUnderlying),_amountUnderlying);
     }
 
-    /**
-    * todo: Make this not dumb. Needs to actually use the router to find the price of the token...
-     */
     function _getMinOut(uint _amountIn, address[] memory _path) internal view returns(uint minOut){
         uint out = dex.getAmountsOut(_amountIn, _path)[_path.length-1];
         minOut = (out * (ONE_HUNDRED_PERCENT - SLIPPAGE)) / ONE_HUNDRED_PERCENT;
