@@ -4,15 +4,13 @@ pragma solidity ^0.8.0;
 import "./StrategyStandard.sol";
 import "../interfaces/IUniswapV2Router02.sol";
 import "@aave/core-v3/contracts/interfaces/IPool.sol";
-
+import {DataTypes} from "@aave/core-v3/contracts/protocol/libraries/types/DataTypes.sol";
 /**
 * @title ETHShortStrategy
 * @author Caron Case (carsonpcase@gmail.com)
     contract to short ETH and 
 */
 contract ETHShortStrategy is StrategyStandard{
-
-    Balance public balance;
 
     IPool public AavePool;
 
@@ -51,27 +49,31 @@ contract ETHShortStrategy is StrategyStandard{
     /// selling the ETH
     /// those coins (added to struct with debt) is the "underlying" bet on
     function fund(uint256 _amountInvestment) public override onlyOwner{
+        require(_amountInvestment != 0, "Cannot fund with 0");
         IERC20(stablecoin).transferFrom(treasury, address(this), _amountInvestment);
-        AavePool.deposit(stablecoin, _amountInvestment, address(this), 0);
-        (,,,,,,,,,address debtTokenAddress,,,,,) = AavePool.getReserveData(address(eth));        
+        IERC20(stablecoin).approve(address(AavePool), _amountInvestment);
+        AavePool.supply(address(stablecoin), _amountInvestment, address(this), 0);
+        (DataTypes.ReserveData memory reserveData) = AavePool.getReserveData(address(eth));
         (,,uint256 availableBorrowsBase,,,) = AavePool.getUserAccountData(address(this));
-        uint toBorrow = (availableBorrowsBase * 75);
+        uint toBorrow = (availableBorrowsBase * 75)/ 100;
 
-        uint debtBefore = IERC20(debtTokenAddress).balanceOf(address(this));
-        // 2 = variable interest rate model, 1 = stable
-        AavePool.borrow(eth, toBorrow / 100, 2, referralCode, address(this));
+        uint stableBalBefore = IERC20(stablecoin).balanceOf(address(this));
+        uint debtBefore = IERC20(reserveData.variableDebtTokenAddress).balanceOf(address(this));
+
+        // 2 = variable inte)rest rate model, 1 = stable
+        AavePool.borrow(eth, toBorrow, 2, 0, address(this));
 
         address[] memory path = new address[](2);
         path[0] = eth;
         path[1] = stablecoin;
 
         uint minOut = _getMinOut(_amountInvestment, path);
-        uint balBefore = address(this).balance;
-        dex.swapExactTokensForETH(_amountInvestment,minOut,path,address(this),block.timestamp + 30);
+        dex.swapExactETHForTokens{value: toBorrow}(minOut,path,address(this),block.timestamp + 30);
 
-        // increase underlying invested by the amount of ETH added
-        underlyingInvested += (address(this).balance - balBefore);
-        debtInvested += IERC20(debtTokenAddress).balanceOf(address(this)) - debtBefore;
+        // increase underlying invested by the amount of stables added
+        uint stableBalAfter = IERC20(stablecoin).balanceOf(address(this));
+        underlyingInvested += (stableBalAfter - stableBalBefore);
+        debtInvested += IERC20(reserveData.variableDebtTokenAddress).balanceOf(address(this)) - debtBefore;
     }
 
     function removeFunds(uint256 _amountToRemove, address _receiver) public override onlyOwner{

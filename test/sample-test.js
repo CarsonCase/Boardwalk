@@ -1,10 +1,12 @@
 const { hexStripZeros } = require("@ethersproject/bytes");
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
+const FaucetABI = require("./AAveFaucetABI.json");
+require('dotenv').config();
 
 const liquidityAmount = ethers.utils.parseEther('10',18);
 
-let uni, stable, govToken, treasury, swaps, oracle;
+let faucet, uni, stable, govToken, treasury, swaps, oracle, aavePool;
 let owner, user1, user2;
 
 describe("Dream Tests", ()=>{
@@ -36,23 +38,23 @@ describe("Dream Tests", ()=>{
     //   ethers.utils.parseEther("0.05"),
     //   );  
 
-    testSwapWithStrategy(
-      "decreasing in ETH value",
-      ethers.utils.parseEther("1"),
-      ethers.utils.parseEther("0.95"),
-      ethers.utils.parseEther("0.1"),
-      ethers.utils.parseEther("0.005"),
-      ethers.utils.parseEther("0.05"),
-      );
+    // testSwapWithStrategy(
+    //   "decreasing in ETH value",
+    //   ethers.utils.parseEther("1"),
+    //   ethers.utils.parseEther("0.95"),
+    //   ethers.utils.parseEther("0.1"),
+    //   ethers.utils.parseEther("0.005"),
+    //   ethers.utils.parseEther("0.05"),
+    //   );
 
-    testSwapWithStrategy(
-      "decreasing in ETH value more",
-      ethers.utils.parseEther("1"),
-      ethers.utils.parseEther("0.90"),
-      ethers.utils.parseEther("0.1"),
-      ethers.utils.parseEther("0.005"),
-      ethers.utils.parseEther("0.05"),
-      );
+    // testSwapWithStrategy(
+    //   "decreasing in ETH value more",
+    //   ethers.utils.parseEther("1"),
+    //   ethers.utils.parseEther("0.90"),
+    //   ethers.utils.parseEther("0.1"),
+    //   ethers.utils.parseEther("0.005"),
+    //   ethers.utils.parseEther("0.05"),
+    //   );
 
     // // For known issues found with the random loop bellow 
     // testSwapWithStrategy(
@@ -92,9 +94,11 @@ function testSwapWithStrategy(
     let user;
     before(async()=>{
       [owner, user, user2] = await ethers.getSigners();
-      const Stable = await ethers.getContractFactory("TestToken");
-      stable = await Stable.deploy("US Dollar", "USDC");
-      await stable.deployed();
+
+      faucet = new ethers.Contract("0x88138CA1e9E485A1E688b030F85Bb79d63f156BA", FaucetABI, owner);
+      await faucet.mint(process.env.STABLECOIN_ADDRESS, "10000000000000000000000000000");
+
+      stable = await ethers.getContractAt("TestToken", process.env.STABLECOIN_ADDRESS);
 
       const GovToken = await ethers.getContractFactory("GovernanceToken");
       govToken = await GovToken.deploy(stable.address);
@@ -118,6 +122,17 @@ function testSwapWithStrategy(
       const Strategy = await hre.ethers.getContractFactory("ETHHODLStrategy");
       strategy = await Strategy.deploy(swaps.address, treasury.address, uni.address);
       await strategy.deployed();
+
+      const FakeAavePool = await hre.ethers.getContractFactory("TestAavePool");
+      aavePool = await FakeAavePool.deploy(oracle.address, await uni.WETH());
+
+      await owner.sendTransaction({
+        to: aavePool.address,
+        value: ethers.utils.parseEther("30.0")
+      });
+  
+      const ShortStrategy = await hre.ethers.getContractFactory("ETHShortStrategy");
+      shortStrategy = await ShortStrategy.deploy(aavePool.address, swaps.address, treasury.address, uni.address);
 
       const ethAddress = await strategy.eth();
       await oracle.setPriceOf(ethAddress, ethStartValueInUSD);  
@@ -179,27 +194,42 @@ function testSwapWithStrategy(
       //   assert.equal(newBal.toString(), expected.toString());
       // });
       it("treasury is given test stables", async() =>{
-        await stable.mint(treasury.address, toFundStrategy);
+        await stable.mint(treasury.address, toFundStrategy.mul(2));
         const treasuryBal = await stable.balanceOf(treasury.address);
-        assert.equal(treasuryBal.toString(), toFundStrategy.toString());
+        assert.equal(treasuryBal.toString(), toFundStrategy.mul(2).toString());
       });
   
     });
   
     describe("strategy creation",()=>{
-      it("treasury funds the strategy", async() =>{
+      it("treasury funds the ETH HODL strategy", async() =>{
         await treasury.transferFundsToStrategy(strategy.address, toFundStrategy);
         const stratBal = await ethers.provider.getBalance(strategy.address);
         assert.equal(stratBal.toString(), (toFundStrategy.mul(ethers.utils.parseEther("1")).div(ethStartValueInUSD)).toString());
       });
     
-      it("fails to issue a swap with no collateral", async()=>{
+      it("ETH HODL fails to issue a swap with no collateral", async()=>{
         try{
           await strategy.connect(user).buySwap(swapBuyAmount);
         }catch(e){
           assert(e)
         }
       });
+
+      it("treasury funds the ETH Short strategy", async() =>{
+        await treasury.transferFundsToStrategy(shortStrategy.address, toFundStrategy);
+        const stratBal = await stable.balanceOf(shortStrategy.address);
+        assert.equal(stratBal.toString(), (toFundStrategy.mul(ethers.utils.parseEther("1")).div(ethStartValueInUSD)).toString());
+      });
+    
+      it("ETH Short fails to issue a swap with no collateral", async()=>{
+        try{
+          await shortStrategy.connect(user).buySwap(swapBuyAmount);
+        }catch(e){
+          assert(e)
+        }
+      });
+
   
     });
   
