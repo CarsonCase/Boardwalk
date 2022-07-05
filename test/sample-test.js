@@ -20,64 +20,64 @@ describe("Dream Tests", ()=>{
       ethers.utils.parseEther("0.05"),  //swapBuyAmount
       );
 
-    // testSwapWithStrategy(
-    //   "increasing a lot in ETH value",        //name
-    //   ethers.utils.parseEther("1"),     //ethStartUSD
-    //   ethers.utils.parseEther("4.0"),   //ethEndUSD
-    //   ethers.utils.parseEther("0.1"),   //toFundStrategy
-    //   ethers.utils.parseEther("0.005"), //CollateralDeposit
-    //   ethers.utils.parseEther("0.05"),  //swapBuyAmount
-    //   );
+    testSwapWithStrategy(
+      "increasing a lot in ETH value",        //name
+      ethers.utils.parseEther("1"),     //ethStartUSD
+      ethers.utils.parseEther("4.0"),   //ethEndUSD
+      ethers.utils.parseEther("0.1"),   //toFundStrategy
+      ethers.utils.parseEther("0.005"), //CollateralDeposit
+      ethers.utils.parseEther("0.05"),  //swapBuyAmount
+      );
 
-    // testSwapWithStrategy(
-    //   "ETH value doesn't change",
-    //   ethers.utils.parseEther("1"),
-    //   ethers.utils.parseEther("1"),
-    //   ethers.utils.parseEther("0.1"),
-    //   ethers.utils.parseEther("0.005"),
-    //   ethers.utils.parseEther("0.05"),
-    //   );  
+    testSwapWithStrategy(
+      "ETH value doesn't change",
+      ethers.utils.parseEther("1"),
+      ethers.utils.parseEther("1"),
+      ethers.utils.parseEther("0.1"),
+      ethers.utils.parseEther("0.005"),
+      ethers.utils.parseEther("0.05"),
+      );  
 
-    // testSwapWithStrategy(
-    //   "decreasing in ETH value",
-    //   ethers.utils.parseEther("1"),
-    //   ethers.utils.parseEther("0.95"),
-    //   ethers.utils.parseEther("0.1"),
-    //   ethers.utils.parseEther("0.005"),
-    //   ethers.utils.parseEther("0.05"),
-    //   );
+    testSwapWithStrategy(
+      "decreasing in ETH value",
+      ethers.utils.parseEther("1"),
+      ethers.utils.parseEther("0.95"),
+      ethers.utils.parseEther("0.1"),
+      ethers.utils.parseEther("0.005"),
+      ethers.utils.parseEther("0.05"),
+      );
 
-    // testSwapWithStrategy(
-    //   "decreasing in ETH value more",
-    //   ethers.utils.parseEther("1"),
-    //   ethers.utils.parseEther("0.90"),
-    //   ethers.utils.parseEther("0.1"),
-    //   ethers.utils.parseEther("0.005"),
-    //   ethers.utils.parseEther("0.05"),
-    //   );
+    testSwapWithStrategy(
+      "decreasing in ETH value more",
+      ethers.utils.parseEther("1"),
+      ethers.utils.parseEther("0.90"),
+      ethers.utils.parseEther("0.1"),
+      ethers.utils.parseEther("0.005"),
+      ethers.utils.parseEther("0.05"),
+      );
 
-    // // For known issues found with the random loop bellow 
-    // testSwapWithStrategy(
-    //   "Known Error",
-    //   ethers.utils.parseEther("50"),
-    //   ethers.utils.parseEther(46.653885447965514.toString(), 18),
-    //   ethers.utils.parseEther("50"),
-    //   ethers.utils.parseEther("0.05"),
-    //   ethers.utils.parseEther("0.5"),
-    //   );
+    // For known issues found with the random loop bellow 
+    testSwapWithStrategy(
+      "Known Error",
+      ethers.utils.parseEther("50"),
+      ethers.utils.parseEther(46.653885447965514.toString(), 18),
+      ethers.utils.parseEther("50"),
+      ethers.utils.parseEther("0.05"),
+      ethers.utils.parseEther("0.5"),
+      );
 
-    // for(let i = 0; i < 10; i++){
-    //   const randNum = Math.random() * 100;
+    for(let i = 0; i < 10; i++){
+      const randNum = Math.random() * 100;
 
-    //   testSwapWithStrategy(
-    //     "Random ETH movement test #" + String(i+1) + "\n50 -> " + String(randNum),
-    //     ethers.utils.parseEther("50"),                    // starting at 50
-    //     ethers.utils.parseUnits(randNum.toString(), 18),  // ending between 1 and 100
-    //     ethers.utils.parseEther("10"),
-    //     ethers.utils.parseEther("0.005"),
-    //     ethers.utils.parseEther("0.05"),
-    //     );  
-    // }
+      testSwapWithStrategy(
+        "Random ETH movement test #" + String(i+1) + "\n50 -> " + String(randNum),
+        ethers.utils.parseEther("50"),                    // starting at 50
+        ethers.utils.parseUnits(randNum.toString(), 18),  // ending between 1 and 100
+        ethers.utils.parseEther("10"),
+        ethers.utils.parseEther("0.005"),
+        ethers.utils.parseEther("0.05"),
+        );  
+    }
 });
 
 function testSwapWithStrategy(
@@ -219,7 +219,11 @@ function testSwapWithStrategy(
       it("treasury funds the ETH Short strategy", async() =>{
         await treasury.transferFundsToStrategy(shortStrategy.address, toFundStrategy);
         const stratBal = await stable.balanceOf(shortStrategy.address);
-        assert.equal(stratBal.toString(), (toFundStrategy.mul(ethers.utils.parseEther("1")).div(ethStartValueInUSD)).toString());
+        const LTV = await aavePool.LTV();
+        const ONE_HUNDRED = 10000;
+
+        assert.equal(stratBal.toString(), 
+        (toFundStrategy.mul(ethers.utils.parseEther("1").mul(LTV.mul(75))).div(ethStartValueInUSD.mul(100).mul(ONE_HUNDRED))).toString());
       });
     
       it("ETH Short fails to issue a swap with no collateral", async()=>{
@@ -237,7 +241,7 @@ function testSwapWithStrategy(
       it("owner transfers user some tokens", async()=>{
         await stable.transfer(user.address, collateralDeposit);
         const newBal = await stable.balanceOf(user.address);
-        assert.equal(collateralDeposit.toString(), newBal.toString());
+        assert.isAtMost(collateralDeposit, newBal);
       });
     
       it("user submits collateral", async()=>{
@@ -285,8 +289,6 @@ function testSwapWithStrategy(
 
           assert.isAtMost(balAfter.sub(balBefore).sub(ethEndValueInUSD.sub(ethStartValueInUSD)).mul(swapBuyAmount).div(ethers.utils.parseEther("1")), 10);
         }else{
-          console.log("TEST: ",balAfter.sub(balBefore).toString())
-
           assert(balAfter.lte(balBefore), "Wrong price behavior");    
           assert.equal((balAfter.sub(balBefore).toString()), "0", "Balance should not change. Only collateral");
           const change = ethStartValueInUSD.sub(ethEndValueInUSD).mul(swapBuyAmount).div(ethers.utils.parseEther("1"));
